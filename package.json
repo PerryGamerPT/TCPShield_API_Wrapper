@@ -1,0 +1,53 @@
+{
+  "name": "@perrygamerpt/tcpshield-api-wrapper",
+  "version": "1.0.1",
+  "description": "Professional Node.js wrapper for the TCPShield REST API with ESM/CJS and TypeScript support.",
+  "license": "MIT",
+  "homepage": "https://github.com/PerryGamerPT/TCPShield_API_Wrapper#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PerryGamerPT/TCPShield_API_Wrapper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PerryGamerPT/TCPShield_API_Wrapper/issues"
+  },
+  "type": "commonjs",
+  "sideEffects": false,
+  "main": "./index.cjs",
+  "module": "./index.mjs",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "require": "./index.cjs",
+      "import": "./index.mjs",
+      "default": "./index.cjs"
+    }
+  },
+  "files": [
+    "index.cjs",
+    "index.mjs",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "tcpshield",
+    "api",
+    "wrapper",
+    "nodejs",
+    "minecraft",
+    "ddos",
+    "client"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "scripts": {
+    "prepublishOnly": "node -e \"console.log('✓ CommonJS:', require('./index.cjs').TcpShieldClient.name)\" && node --input-type=module -e \"import('./index.mjs').then(m => console.log('✓ ESM:', m.TcpShieldClient.name))\"",
+    "validate": "npm run prepublishOnly",
+    "release:patch": "npm version patch && git push --follow-tags",
+    "release:minor": "npm version minor && git push --follow-tags",
+    "release:major": "npm version major && git push --follow-tags"
+  }
+}

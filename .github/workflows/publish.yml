@@ -1,0 +1,77 @@
+name: Publish Package
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@perrygamerpt'
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION="${{ github.event.release.tag_name }}"
+            VERSION="${VERSION#v}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Version extracted from release: $VERSION"
+          else
+            VERSION=$(node -e "console.log(require('./package.json').version)")
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Using current package version: $VERSION"
+          fi
+
+      - name: Update package.json version
+        if: github.event_name == 'release'
+        run: |
+          npm version ${{ steps.get_version.outputs.version }} --no-git-tag-version --allow-same-version
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add package.json
+          git diff --staged --quiet || git commit -m "chore: bump version to ${{ steps.get_version.outputs.version }}"
+          git push origin HEAD:main || echo "No changes to push"
+
+      - name: Verify package structure
+        run: |
+          echo "Checking required files..."
+          ls -la index.cjs index.mjs index.d.ts README.md LICENSE
+          node -e "const pkg = require('./package.json'); console.log('Package:', pkg.name, 'v' + pkg.version)"
+
+      - name: Test CommonJS import
+        run: node -e "const { TcpShieldClient } = require('./index.cjs'); console.log('✓ CJS OK')"
+
+      - name: Test ESM import
+        run: node --input-type=module -e "import('./index.mjs').then(() => console.log('✓ ESM OK'))"
+
+      - name: Publish to GitHub Packages
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js for npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Publish to npm
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        continue-on-error: true
